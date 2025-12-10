@@ -107,8 +107,80 @@ class EdgeRemovalProblem:
         ga = GeneticAlgorithm(problem=self, **kwargs)
         return ga.optimize()
 
+    
+    # Solve using Gurobi
+    def solve_with_ip(self):
+        """Solve edge removal using Integer Programming."""
+        import gurobipy as gp
+        from gurobipy import GRB
         
+        model = gp.Model("EdgeRemoval")
+        model.setParam('OutputFlag', 0)
+        
+        # Decision variables
+        flow_vars = {}  # f[u,v] = amount of flow on edge (u,v)
+        edge_vars = {}  # x[i] = 1 if keep edge i, 0 if remove edge i
 
+        for i, (u, edge) in enumerate(self.edges):
+            v = edge.dest
+            capacity = edge.capacity
+            
+            # Flow variable (How much flow goes through this edge)
+            flow_vars[(u, v)] = model.addVar(lb=0.0, ub=capacity, name=f"f_{u}_{v}")
+            
+            # Binary edge selection variable (Do we keep this edge)
+            edge_vars[i] = model.addVar(vtype=GRB.BINARY, name=f"x_{i}")
+
+        # Objective: maximize number of removed edges = maximize sum(1 - x[i])
+        model.setObjective(
+            gp.quicksum(1 - edge_vars[i] for i in range(len(self.edges))),
+            GRB.MAXIMIZE
+        )
+
+        # Constraint 1: if an edge is not selected (edge_vars[i] = 0) flow should be 0
+        for i, (u, edge) in enumerate(self.edges):
+            v = edge.dest
+            model.addConstr(flow_vars[(u, v)] <= edge_vars[i] * edge.capacity, name=f"cap_{i}")
+
+        # Constraint 2: Flow Conservation (flow in = flow out) for all nodes except source and sink
+        for node in range(self.network.n):
+            if node == self.source or node == self.sink:
+                continue
+            
+            # Sum of all flows INTO node
+            flow_in = gp.quicksum(
+                flow_vars[(u, node)]
+                for (u, edge) in self.edges
+                if edge.dest == node
+            )
+            
+            # Sum of all flows OUT OF node
+            flow_out = gp.quicksum(
+                flow_vars[(node, edge.dest)]
+                for (u, edge) in self.edges
+                if u == node
+            )
+            
+            model.addConstr(flow_in == flow_out, name=f"conservation_{node}")
+        
+        # Constraint 3: Ensure total flow ≥ original max flow
+        # Note: By flow conservation, total flow leaving source equals total flow entering sink, which is the definition of max flow in the network
+        total_flow_out = gp.quicksum(
+            flow_vars[(self.source, edge.dest)]
+            for (u, edge) in self.edges
+            if u == self.source
+        )
+        model.addConstr(total_flow_out >= self.original_max_flow, name="min_flow")
+
+        model.optimize()
+
+        if model.status == GRB.OPTIMAL:
+            # extracts the solution value from a Gurobi variable and convert it to an int
+            solution = [int(edge_vars[i].X) for i in range(len(self.edges))]
+            num_removed = solution.count(0)
+            return solution, num_removed
+        else:
+            return None, 0
     
 
 
