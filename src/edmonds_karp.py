@@ -42,7 +42,7 @@ def edmonds_karp(network, source, sink):
     
     return max_flow
     
-def bfs(network, source, sink):
+def bfs(network, source, sink, neighbor_sort_fn=None):
     """Find shortest augmenting path using BFS."""
     parent = {}  # parent[node] = (parent_node, edge_used)
     visited = set([source])
@@ -65,8 +65,15 @@ def bfs(network, source, sink):
             path.reverse()  # We built it backwards, so reverse
             return path
         
+        # Get neighbors
+        neighbors = network.graph[current]
+        
+        # Apply optional sorting
+        if neighbor_sort_fn is not None:
+            neighbors = neighbor_sort_fn(neighbors)
+        
         # Explore neighbors
-        for edge in network.graph[current]:
+        for edge in neighbors:
             # Check if edge has residual capacity AND dest not visited
             residual_capacity = edge.capacity - edge.flow
             
