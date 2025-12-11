@@ -204,22 +204,29 @@ def export_results(results, filename):
     if not results:
         return
     
-    with open(filename, 'w', newline='') as f:
+    # Create results directory if it doesn't exist
+    results_dir = os.path.join(os.path.dirname(__file__), 'results')
+    os.makedirs(results_dir, exist_ok=True)
+    
+    # Full path to output file
+    filepath = os.path.join(results_dir, filename)
+    
+    with open(filepath, 'w', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=results[0].keys())
         writer.writeheader()
         writer.writerows(results)
     
-    print(f"Results exported to {filename}")
+    print(f"Results exported to {filepath}")
 
 
 if __name__ == "__main__":
-    # # Test standard max flow
-    # results_standard = test_standard_max_flow()
-    # export_results(results_standard, 'results_standard_maxflow.csv')
+    # Test standard max flow
+    results_standard = test_standard_max_flow()
+    export_results(results_standard, 'results_standard_maxflow.csv')
     
-    # # Test edge removal
-    # results_removal = test_edge_removal()
-    # export_results(results_removal, 'results_edge_removal.csv')
+    # Test edge removal
+    results_removal = test_edge_removal()
+    export_results(results_removal, 'results_edge_removal.csv')
 
     # Test edge selection
     results_selection = test_edge_selection()
