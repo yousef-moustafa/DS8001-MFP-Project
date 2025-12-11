@@ -76,3 +76,4 @@ GA_CONFIGS = {
 
 # Edge selection budget fractions
 BUDGET_FRACTIONS = [0.3, 0.5, 0.7]
+EDGE_SELECTION_TRIALS = 1

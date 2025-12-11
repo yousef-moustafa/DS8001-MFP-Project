@@ -11,7 +11,7 @@ from linear_programming import max_flow_lp
 from greedy import greedy_max_flow
 from variants.edge_removal import EdgeRemovalProblem
 from variants.edge_selection import EdgeSelectionProblem
-from experiment_config import BUDGET_FRACTIONS
+from experiment_config import BUDGET_FRACTIONS, EDGE_SELECTION_TRIALS
 
 
 def run_standard_maxflow_experiments(network_config):
@@ -113,7 +113,7 @@ def run_edge_selection_experiments(network_config, sa_params, ga_params):
     
     for n_nodes in network_config['sizes']:
         for edge_prob in network_config['edge_probs']:
-            for trial in range(network_config['num_trials']):
+            for trial in range(EDGE_SELECTION_TRIALS):
                 source, sink = 0, n_nodes - 1
                 
                 # Generate base network to calculate total edges
