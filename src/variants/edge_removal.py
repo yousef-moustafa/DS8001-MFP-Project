@@ -53,7 +53,17 @@ class EdgeRemovalProblem:
     # Interface Methods for SA/GA
     
     def get_random_solution(self):
-            return [random.choice([0, 1]) for _ in range(len(self.edges))]
+        """Generate solution near the all-edges configuration."""
+        solution = [1] * len(self.edges)
+        
+        # Randomly flip 1-3 edges to create diversity
+        num_flips = random.randint(1, 3)
+        indices = random.sample(range(len(self.edges)), num_flips)
+        
+        for i in indices:
+            solution[i] = 0
+        
+        return solution
 
     def evaluate_fitness(self, solution):
         subgraph = self._create_subgraph_from_solution(solution)
@@ -61,11 +71,16 @@ class EdgeRemovalProblem:
         # Compute max flow on the solution
         flow = edmonds_karp(subgraph, self.source, self.sink)
 
+        num_removed = solution.count(0)
+    
         if flow >= self.original_max_flow:
-            # Return number of edges removed
-            return solution.count(0)
+            # Valid solution: fitness is number of removed edges
+            return num_removed
         else:
-            return 0
+            # Invalid solution: apply penalty proportional to flow deficit
+            flow_deficit = self.original_max_flow - flow
+            penalty = flow_deficit * 1.0  # Penalty weight (tunable)
+            return num_removed - penalty
         
     def get_initial_solution(self):
         return [1] * len(self.edges)
@@ -181,6 +196,3 @@ class EdgeRemovalProblem:
             return solution, num_removed
         else:
             return None, 0
-    
-
-
