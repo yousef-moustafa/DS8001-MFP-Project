@@ -22,6 +22,8 @@ def test_standard_max_flow():
     """Test Edmonds-Karp, LP, and Greedy on generated networks."""
     print("Testing Standard Max Flow Algorithms...")
     print("-" * 60)
+
+    results = []  # Collect results to write to csv
     
     for n_nodes in NETWORK_SIZES:
         for edge_prob in EDGE_PROBABILITIES:
@@ -40,18 +42,24 @@ def test_standard_max_flow():
                 start = time.time()
                 ek_flow = edmonds_karp(net1, source, sink)
                 ek_time = time.time() - start
+
+                record_result(results, 'standard_max_flow', 'edmonds_karp', n_nodes, edge_prob, trial+1, ek_flow, ek_time)
                 
                 # Test LP
                 net2 = generate_random_network(n_nodes, edge_prob, CAPACITY_RANGE[0], CAPACITY_RANGE[1], seed=trial)
                 start = time.time()
                 lp_flow = max_flow_lp(net2, source, sink)
                 lp_time = time.time() - start
+
+                record_result(results, 'standard_max_flow', 'linear_programming', n_nodes, edge_prob, trial+1, lp_flow, lp_time)
                 
                 # Test Greedy
                 net3 = generate_random_network(n_nodes, edge_prob, CAPACITY_RANGE[0], CAPACITY_RANGE[1], seed=trial)
                 start = time.time()
                 greedy_flow = greedy_max_flow(net3, source, sink)
                 greedy_time = time.time() - start
+
+                record_result(results, 'standard_max_flow', 'greedy', n_nodes, edge_prob, trial+1, greedy_flow, greedy_time)
                 
                 print(f"n={n_nodes}, p={edge_prob}, trial={trial+1}")
                 print(f"  EK: flow={ek_flow:.1f}, time={ek_time:.4f}s")
@@ -59,5 +67,38 @@ def test_standard_max_flow():
                 print(f"  Greedy: flow={greedy_flow:.1f}, time={greedy_time:.4f}s")
                 print()
 
+    return results
+
+
+def record_result(results, problem, algorithm, n_nodes, edge_prob, trial, flow, time_taken, **extra):
+    """Helper to record a single result."""
+    result = {
+        'problem': problem,
+        'algorithm': algorithm,
+        'n_nodes': n_nodes,
+        'edge_prob': edge_prob,
+        'trial': trial,
+        'flow': flow,
+        'time': time_taken
+    }
+    result.update(extra)  # Add any extra fields
+    results.append(result)
+
+import csv
+
+def export_results(results, filename):
+    """Export results to CSV file."""
+    if not results:
+        return
+    
+    with open(filename, 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=results[0].keys())
+        writer.writeheader()
+        writer.writerows(results)
+    
+    print(f"Results exported to {filename}")
+
+
 if __name__ == "__main__":
-    test_standard_max_flow()
+    results = test_standard_max_flow()
+    export_results(results, 'results_standard_maxflow.csv')
