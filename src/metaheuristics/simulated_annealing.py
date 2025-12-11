@@ -48,7 +48,7 @@ class SimulatedAnnealing:
                 delta = neighbor_fitness - current_fitness
                 
                 # Metropolis acceptance criterion
-                if delta > 0 or random() < math.exp(delta / temp):
+                if delta > 0 or random.random() < math.exp(delta / temp):
                     current = neighbor
                     current_fitness = neighbor_fitness
                     
